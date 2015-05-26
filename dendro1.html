@@ -21,12 +21,12 @@
 
 </style>
 <body>
-<script src="http://d3js.org/d3.v3.min.js"></script>
-<script src="bower_components/jquery/dist/jquery.js"></script>
-<script src="bower_components/underscore/underscore.js"></script>
+<script src="lib/d3/d3.min.js"></script>
+<script src="lib/jquery/dist/jquery.js"></script>
+<script src="lib/underscore/underscore.js"></script>
 <script>
 
-var data = d3.csv('portus_comments_clean220714.csv', function(err, data)  {
+var data = d3.csv('data/portus_comments_clean220714.csv', function(err, data)  {
     var root = {};
     data.map(function(row) { 
         if (row.parent && !root[row.parent_id]) { 
