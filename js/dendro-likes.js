@@ -7,7 +7,10 @@ var DATA_FILE = 'data/portus_500.csv', // whole dataset: 'data/portus_NOcomments
 		var root = window.root = {},
 			min_children = 3;
 
+		// sort by step
+		console.log('before sorting data ', data.length);
 		data.sort(function(a, b) { return parseFloat(b.step) - parseFloat(a.step); });
+		console.log('sorted data ', data.length);
 
 		// get convo roots
 		data.filter(function(x) { return x.parent_id.length == 0; })
@@ -46,7 +49,8 @@ var DATA_FILE = 'data/portus_500.csv', // whole dataset: 'data/portus_NOcomments
 				  return x.children.length >= min_children; 
 				}),
 				nodes = cluster.nodes({name:'potus', children:subset}),
-				links = cluster.links(nodes);
+				links = cluster.links(nodes),
+				stepScale = d3.scale.category10();
 
 			console.info('subset is now ', subset.length, min_children, typeof(min_children));
 
@@ -63,8 +67,9 @@ var DATA_FILE = 'data/portus_500.csv', // whole dataset: 'data/portus_NOcomments
 				.attr('transform', function(d) { return 'translate(' + d.y + ',' + d.x + ')'; });
 
 			node.append('circle')
-				.attr('r', 2.5)
-				.attr('stroke', "steelblue");
+				.attr('r', function(d) { return 1.5 + 0.5*parseInt(d.likes); })
+				.attr('step', function(d) { return d.step; })
+				.attr('stroke', function(d) { return stepScale(d.step); });
 
 			node.append('text')
 				.attr('dx', function(d) { return d.children ? -8 : 8; })
