@@ -1,7 +1,7 @@
 /* jshint undef: true, strict:false, trailing:false, unused:false */
 /* global d3, console, process, module, L, angular, _, $, jQuery, Backbone, window, clearTimeout, setTimeout */
 
-var DATA_FILE = 'data/portus_500.csv', // whole dataset: 'data/portus_NOcomments.csv',
+var DATA_FILE = 'data/portus_NOcomments.csv', // 'data/portus_500.csv', // whole dataset: 'data/portus_NOcomments.csv',
 	data = d3.csv(DATA_FILE, function(err, data)  {
 
 		var root = window.root = {},
@@ -76,6 +76,12 @@ var DATA_FILE = 'data/portus_500.csv', // whole dataset: 'data/portus_NOcomments
 		// make a copy 
 		window.raw_data = data.concat();
 		window.data = root; // for debug		
+
+		var max_children = _(root).chain().map(function(x) { 
+			return x.children.length; 
+		}).max().value();
+		$("#cutoff").attr("max", max_children);
+		console.info("max number of children ", max_children);
 
 		$('#cutoff').on('input', function(x) { 
 			min_children = parseInt($("#cutoff").val());
