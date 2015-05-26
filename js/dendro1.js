@@ -4,13 +4,8 @@
 var DATA_FILE = 'data/portus_500.csv', // whole dataset: 'data/portus_NOcomments.csv',
 	data = d3.csv(DATA_FILE, function(err, data)  {
 
-		// make a copy 
-		window.raw_data = data.concat();
-
 		var root = window.root = {},
-			make_layer = function(id) { 
-				return { name : id, children: [], size:1 };
-			};
+			min_children = 3;
 
 		data.map(function(row) { 
 			if (row.parent_id && root[row.parent_id] === undefined) { 
@@ -28,9 +23,6 @@ var DATA_FILE = 'data/portus_500.csv', // whole dataset: 'data/portus_NOcomments
 			_(root[row.id]).extend(row); // add attributes
 		});
 
-		console.log('hierarchical tree! ', root);
-		window.data = root; // for debug
-
 		var width = jQuery('body').width(), 
 			height = jQuery('body').height();
 
@@ -46,32 +38,50 @@ var DATA_FILE = 'data/portus_500.csv', // whole dataset: 'data/portus_NOcomments
 			.append('g')
 			.attr('transform', 'translate(40,0)');
 
-		var nodes = cluster.nodes({name:'potus', children:_(root).values().filter(function(x) { 
-			  return x.children.length > 5; 
-			})}),
-			links = cluster.links(nodes);
+		var render = function() { 
+			var subset = _(root).values().filter(function(x) { 
+				  return x.children.length >= min_children; 
+				}),
+				nodes = cluster.nodes({name:'potus', children:subset}),
+				links = cluster.links(nodes);
 
-		var link = svg.selectAll('.link')
-			.data(links)
-			.enter().append('path')
-			.attr('class', 'link')
-			.attr('d', diagonal);
+			console.info('subset is now ', subset.length, min_children, typeof(min_children));
 
-		var node = svg.selectAll('.node')
-			.data(nodes)
-			.enter().append('g')
-			.attr('class', 'node')
-			.attr('transform', function(d) { return 'translate(' + d.y + ',' + d.x + ')'; });
+			var link = svg.selectAll('.link')
+				.data(links)
+				.enter().append('path')
+				.attr('class', 'link')
+				.attr('d', diagonal);
 
-		node.append('circle')
-			.attr('r', 4.5);
+			var node = svg.selectAll('.node')
+				.data(nodes)
+				.enter().append('g')
+				.attr('class', 'node')
+				.attr('transform', function(d) { return 'translate(' + d.y + ',' + d.x + ')'; });
 
-		node.append('text')
-			.attr('dx', function(d) { return d.children ? -8 : 8; })
-			.attr('dy', 3)
-			.style('text-anchor', function(d) { return d.children ? 'end' : 'start'; })
-			.text(function(d) { return d.name; });
+			node.append('circle')
+				.attr('r', 4.5);
+
+			node.append('text')
+				.attr('dx', function(d) { return d.children ? -8 : 8; })
+				.attr('dy', 3)
+				.style('text-anchor', function(d) { return d.children ? 'end' : 'start'; })
+				.text(function(d) { return d.name || d.id; });
+		};
 
 		d3.select('body').style('height', height + 'px');
+		render();
 
+		// debugg stuff
+		// make a copy 
+		window.raw_data = data.concat();
+		window.data = root; // for debug		
+
+		$('#cutoff').on('input', function(x) { 
+			min_children = parseInt($("#cutoff").val());
+			svg.selectAll("*").remove();
+			$("#cutoffDisplay").html(min_children);
+			render();
+		});
+		$("#cutoffDisplay").html(min_children);
 });
