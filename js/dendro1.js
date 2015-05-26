@@ -1,26 +1,32 @@
 /* jshint undef: true, strict:false, trailing:false, unused:false */
 /* global d3, console, process, module, L, angular, _, $, jQuery, Backbone, window, clearTimeout, setTimeout */
 
-var DATA_FILE = 'data/portus_NOcomments.csv', // 'data/portus_500.csv', // whole dataset: 'data/portus_NOcomments.csv',
+var DATA_FILE = 'data/portus_500.csv', // whole dataset: 'data/portus_NOcomments.csv',
 	data = d3.csv(DATA_FILE, function(err, data)  {
 
 		var root = window.root = {},
 			min_children = 3;
 
-		data.map(function(row) { 
-			if (row.parent_id && root[row.parent_id] === undefined) { 
+		// sort by step
+		console.log('before sorting data ', data.length);
+		data.sort(function(a, b) { return parseFloat(b.step) - parseFloat(a.step); });
+		console.log('sorted data ', data.length);
+
+		// get convo roots
+		data.filter(function(x) { return x.parent_id.length == 0; })
+			.map(function(x) { 
+				root[x.id] = { name : x.id, children: [], size:x.length };
+				_(root[x.id]).extend(x); // add attributes
+			});
+
+		// populate the threads
+		data.filter(function(x) { return x.parent_id.length !== 0; }).map(function(row) { 
+			if (root[row.parent_id]) {
+				// console.info('pushing parent ', row.parent_id);
+				root[row.parent_id].children.push(row);
+			} else {
 				console.error('missing parent', row.id, row.parent_id, typeof(row.parent_id)); 
 			} 
-			if (row.parent_id) { 
-				if(root[row.parent_id]) {
-				  // console.info('pushing parent ', row.parent_id);
-				  root[row.parent_id].children.push(row);
-				  return;
-				}
-			}
-			// no parent
-			root[row.id] = { name : row.id, children: [], size:row.length };
-			_(root[row.id]).extend(row); // add attributes
 		});
 
 		var width = jQuery('body').width(), 
@@ -43,7 +49,9 @@ var DATA_FILE = 'data/portus_NOcomments.csv', // 'data/portus_500.csv', // whole
 				  return x.children.length >= min_children; 
 				}),
 				nodes = cluster.nodes({name:'potus', children:subset}),
-				links = cluster.links(nodes);
+				links = cluster.links(nodes),
+				stepScale = d3.scale.category10();
+			window.ss = stepScale;
 
 			console.info('subset is now ', subset.length, min_children, typeof(min_children));
 
@@ -60,7 +68,10 @@ var DATA_FILE = 'data/portus_NOcomments.csv', // 'data/portus_500.csv', // whole
 				.attr('transform', function(d) { return 'translate(' + d.y + ',' + d.x + ')'; });
 
 			node.append('circle')
-				.attr('r', 4.5);
+				.attr('r', 2.5)
+				.attr('step', function(d) { return d.step; })
+				.attr('stroke', function(d) { return stepScale(d.step); });
+
 
 			node.append('text')
 				.attr('dx', function(d) { return d.children ? -8 : 8; })
